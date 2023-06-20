@@ -6,11 +6,11 @@ import (
 	"log"
 	"net/http"
 	"sort"
-	"time"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/models"
 )
 
 // Boilerplate from https://echo.labstack.com/guide/templates/
@@ -23,17 +23,15 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 }
 
 type Quote struct {
-	Quote         string
+	Text          string
 	Book          string
 	DateSubmitted string
 }
 
-var quotes = []Quote{
-	{Quote: "Hello World", Book: "Some Book", DateSubmitted: time.Now().UTC().String()},
-}
+var app *pocketbase.PocketBase
 
 func main() {
-	app := pocketbase.New()
+	app = pocketbase.New()
 
 	// Pre-compile templates
 	t := &Template{
@@ -54,23 +52,49 @@ func main() {
 }
 
 func index(c echo.Context) error {
-	sorted_quotes := quotes
-	sort.Slice(sorted_quotes, func(i, j int) bool {
-		return sorted_quotes[i].DateSubmitted > sorted_quotes[j].DateSubmitted
+	records, err := app.Dao().FindRecordsByExpr("quotes")
+	if err != nil {
+		return c.Render(http.StatusInternalServerError, "error.html", err)
+	}
+
+	quotes := []Quote{}
+	for _, record := range records {
+		quotes = append(quotes, new_quote(record))
+	}
+	sort.Slice(quotes, func(i, j int) bool {
+		return quotes[i].DateSubmitted > quotes[j].DateSubmitted
 	})
 
 	tmpl_args := map[string][]Quote{
-		"Quotes": sorted_quotes,
+		"Quotes": quotes,
 	}
 	return c.Render(http.StatusOK, "index.html", tmpl_args)
 }
 
 func add_quote(c echo.Context) error {
-	quote := c.FormValue("quote")
+	text := c.FormValue("text")
 	book := c.FormValue("book")
-	date_submitted := time.Now().UTC().String()
-	quote_record := Quote{Quote: quote, Book: book, DateSubmitted: date_submitted}
-	quotes = append(quotes, quote_record)
 
-	return c.Render(http.StatusOK, "quote", quote_record)
+	collection, err := app.Dao().FindCollectionByNameOrId("quotes")
+	if err != nil {
+		return c.Render(http.StatusInternalServerError, "error.html", err)
+	}
+
+	record := models.NewRecord(collection)
+	record.Set("text", text)
+	record.Set("book", book)
+
+	if err := app.Dao().SaveRecord(record); err != nil {
+		return c.Render(http.StatusInternalServerError, "error.html", err)
+	}
+
+	return c.Render(http.StatusOK, "quote", new_quote(record))
+}
+
+func new_quote(record *models.Record) Quote {
+	return Quote{
+		Text:          record.GetString("text"),
+		Book:          record.GetString("book"),
+		DateSubmitted: record.GetString("created"),
+	}
 }
