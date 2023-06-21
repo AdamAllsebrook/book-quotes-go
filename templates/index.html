@@ -4,14 +4,15 @@
     <meta charset="utf-8">
     <title>Home</title>
     <script src="https://unpkg.com/htmx.org@1.9.2" integrity="sha384-L6OqL9pRWyyFU3+/bjdSri+iIphTN/bvYyM37tICVyOJkWZLpP2vGn6VUEXgzg6h" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/static/output.css">
 </head>
-<body>
-    <h1>Book Quotes</h1>
-    <form hx-post="/add-quote/" hx-target="#quotes-feed" hx-swap="afterbegin">
+<body class="bg-red">
+    <h1 class="text-2xl">Book Quotes</h1>
+    <form class="space-y-5 flex flex-col" hx-post="/add-quote/" hx-target="#quotes-feed" hx-swap="afterbegin">
         <label for="book">Book</label>
-        <input name="book" placeholder="Book">
+        <input type="text" name="book" placeholder="Book">
         <label for="text">Quote</label>
-        <input name="text" placeholder="Quote">
+        <input type="text" name="text" placeholder="Quote">
         <button type="submit">Add Quote</button>
     </form>
     <div id="quotes-feed">

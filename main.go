@@ -27,9 +27,12 @@ func main() {
 
 	defer db.Close()
 
-	println("Staring server on port 8080")
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
 	http.HandleFunc("/", index)
 	http.HandleFunc("/add-quote/", addQuote)
+	println("Staring server on port 8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
