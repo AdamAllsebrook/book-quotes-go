@@ -1,0 +1,7 @@
+{{ define "_quote"}}
+    <div class="quote py-8 space-y-1">
+        <h2>{{ .Book }}</h2>
+        <p class="text-xl">{{ .Text }}</p>
+        <p class="text-gray-600">{{ .CreatedAt.Format "Jan 02, 2006" }}</p>
+    </div>
+{{ end }}

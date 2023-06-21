@@ -12,7 +12,7 @@ import (
 type Quote struct {
 	Text      string
 	Book      string
-	CreatedAt string
+	CreatedAt time.Time
 }
 
 var db *sql.DB
@@ -51,12 +51,13 @@ func index(w http.ResponseWriter, r *http.Request) {
 		var book string
 		var created_at string
 		err = rows.Scan(&id, &text, &book, &created_at)
+		created_at_time, err := time.Parse(time.RFC3339, created_at)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		quote := Quote{Text: text, Book: book, CreatedAt: created_at}
+		quote := Quote{Text: text, Book: book, CreatedAt: created_at_time}
 		quotes = append(quotes, quote)
 	}
 
@@ -65,14 +66,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 	tmpl_args := map[string][]Quote{
 		"Quotes": quotes,
 	}
-	tmpl := template.Must(template.ParseFiles("templates/index.html"))
-	tmpl.Execute(w, tmpl_args)
+	tmpl := template.Must(template.ParseGlob("templates/*"))
+	tmpl.ExecuteTemplate(w, "index", tmpl_args)
 }
 
 func addQuote(w http.ResponseWriter, r *http.Request) {
 	text := r.PostFormValue("text")
 	book := r.PostFormValue("book")
-	created_at := time.Now().UTC().String()
+	created_at := time.Now().UTC()
 	quote := Quote{Text: text, Book: book, CreatedAt: created_at}
 
 	stmt, err := db.Prepare("insert into quotes(text, book, created_at) values(?, ?, ?)")
@@ -81,11 +82,11 @@ func addQuote(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(text, book, created_at)
+	_, err = stmt.Exec(text, book, created_at.Format(time.RFC3339))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmpl := template.Must(template.ParseFiles("templates/index.html"))
-	tmpl.ExecuteTemplate(w, "quote", quote)
+	tmpl := template.Must(template.ParseGlob("templates/*"))
+	tmpl.ExecuteTemplate(w, "_quote", quote)
 }

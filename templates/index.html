@@ -1,30 +1,26 @@
+{{define "index"}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <title>Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@1.9.2" integrity="sha384-L6OqL9pRWyyFU3+/bjdSri+iIphTN/bvYyM37tICVyOJkWZLpP2vGn6VUEXgzg6h" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="/static/output.css">
 </head>
-<body class="bg-red">
-    <h1 class="text-2xl">Book Quotes</h1>
-    <form class="space-y-5 flex flex-col" hx-post="/add-quote/" hx-target="#quotes-feed" hx-swap="afterbegin">
-        <label for="book">Book</label>
-        <input type="text" name="book" placeholder="Book">
-        <label for="text">Quote</label>
-        <input type="text" name="text" placeholder="Quote">
-        <button type="submit">Add Quote</button>
-    </form>
-    <div id="quotes-feed">
-        {{ range .Quotes }}
-            {{ block "quote" .}}
-                <div class="quote">
-                    <h2>{{ .Book }}</h2>
-                    <p>{{ .Text }}</p>
-                    <p>{{ .CreatedAt }}</p>
-                </div>
+<body class="flex" style="font-family: 'Merriweather', serif;">
+    <main class="max-w-[70ch] min-w-full lg:min-w-[70ch] mx-auto flex flex-col border-x-2">
+        <h1 class="text-2xl mx-auto py-4">Book Quotes</h1>
+        {{ template "_new_quote" .}}
+        <div id="quotes-feed" class="p-4">
+            {{ range .Quotes }}
+                {{ template "_quote" . }}
             {{ end }}
-        {{ end }}
-    </div>
+        </div>
+    </main>
 </body>
 </html>  
+{{end}}
