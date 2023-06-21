@@ -10,8 +10,8 @@
     <form hx-post="/add-quote/" hx-target="#quotes-feed" hx-swap="afterbegin">
         <label for="book">Book</label>
         <input name="book" placeholder="Book">
-        <label for="quote">Quote</label>
-        <input name="quote" placeholder="Quote">
+        <label for="text">Quote</label>
+        <input name="text" placeholder="Quote">
         <button type="submit">Add Quote</button>
     </form>
     <div id="quotes-feed">
@@ -19,8 +19,8 @@
             {{ block "quote" .}}
                 <div class="quote">
                     <h2>{{ .Book }}</h2>
-                    <p>{{ .Quote }}</p>
-                    <p>{{ .DateSubmitted }}</p>
+                    <p>{{ .Text }}</p>
+                    <p>{{ .CreatedAt }}</p>
                 </div>
             {{ end }}
         {{ end }}

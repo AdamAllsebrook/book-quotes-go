@@ -1,50 +1,88 @@
 package main
 
 import (
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 	"html/template"
 	"log"
 	"net/http"
-	"sort"
 	"time"
 )
 
 type Quote struct {
-	Quote         string
-	Book          string
-	DateSubmitted string
+	Text      string
+	Book      string
+	CreatedAt string
 }
 
-var quotes = []Quote{
-	{Quote: "Hello World", Book: "Some Book", DateSubmitted: time.Now().UTC().String()},
-}
+var db *sql.DB
 
 func main() {
+	var err error
+	db, err = sql.Open("sqlite3", "book-quotes.db")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer db.Close()
+
 	println("Staring server on port 8080")
 	http.HandleFunc("/", index)
-	http.HandleFunc("/add-quote/", add_quote)
+	http.HandleFunc("/add-quote/", addQuote)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	sorted_quotes := quotes
-	sort.Slice(sorted_quotes, func(i, j int) bool {
-		return sorted_quotes[i].DateSubmitted > sorted_quotes[j].DateSubmitted
-	})
+	rows, err := db.Query("SELECT * FROM quotes ORDER BY created_at DESC")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var quotes []Quote
+
+	for rows.Next() {
+		var id int
+		var text string
+		var book string
+		var created_at string
+		err = rows.Scan(&id, &text, &book, &created_at)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		quote := Quote{Text: text, Book: book, CreatedAt: created_at}
+		quotes = append(quotes, quote)
+	}
+
+	defer rows.Close()
 
 	tmpl_args := map[string][]Quote{
-		"Quotes": sorted_quotes,
+		"Quotes": quotes,
 	}
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))
 	tmpl.Execute(w, tmpl_args)
 }
 
-func add_quote(w http.ResponseWriter, r *http.Request) {
-	quote := r.PostFormValue("quote")
+func addQuote(w http.ResponseWriter, r *http.Request) {
+	text := r.PostFormValue("text")
 	book := r.PostFormValue("book")
-	date_submitted := time.Now().UTC().String()
-	quote_record := Quote{Quote: quote, Book: book, DateSubmitted: date_submitted}
-	quotes = append(quotes, quote_record)
+	created_at := time.Now().UTC().String()
+	quote := Quote{Text: text, Book: book, CreatedAt: created_at}
+
+	stmt, err := db.Prepare("insert into quotes(text, book, created_at) values(?, ?, ?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(text, book, created_at)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))
-	tmpl.ExecuteTemplate(w, "quote", quote_record)
+	tmpl.ExecuteTemplate(w, "quote", quote)
 }
